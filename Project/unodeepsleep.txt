@@ -1,0 +1,116 @@
+#define LED_PIN 3
+
+/*Arduino uno pinout is shown below*/
+
+#define in1 11 // switch1
+#define in2 10 // switch2
+#define in3 9 // switch3
+#define in4 8 // switch4
+
+#define out1 7  //led1
+#define out2 6  //led2
+#define out3 5  //led3
+#define out4 4 //led4
+
+boolean val1 = false;      // variable to store the read value
+boolean val2 = false;      // variable to store the read value
+boolean val3 = false;      // variable to store the read value
+boolean val4 = false;      // variable to store the read value
+
+void setup() {
+  //Save Power by writing all Digital IO LOW - note that pins just need to be tied one way or another, do not damage devices!
+  //for (int i = 0; i < 20; i++) {
+  //if(i != 2)//just because the button is hooked up to digital pin 2
+  pinMode(i, OUTPUT);
+  //}
+  
+  attachInterrupt(0, digitalInterrupt, FALLING); //interrupt for waking up
+  pinMode(LED_PIN, OUTPUT);
+  
+  pinMode(out1, OUTPUT);  // sets the digital pin 5 as output of arduino uno
+  pinMode(out2, OUTPUT);  // sets the digital pin 4 as output of arduino uno
+  pinMode(out3, OUTPUT);  // sets the digital pin 3 as output of arduino uno
+  pinMode(out4, OUTPUT);  // sets the digital pin 2 as output of arduino uno
+  
+  pinMode(in4, INPUT);    // sets the digital pin 11 as input of arduino uno
+  pinMode(in3, INPUT);    // sets the digital pin 10 as input of arduino uno
+  pinMode(in2, INPUT);    // sets the digital pin 9 as input of arduino uno
+  pinMode(in1, INPUT);    // sets the digital pin 8 as input of arduino un
+  
+ 
+   
+  //Disable ADC - don't forget to flip back after waking up if using ADC in your application ADCSRA |= (1 << 7);
+  ADCSRA &= ~(1 << 7);
+  //SETUP WATCHDOG TIMER
+  WDTCSR = (24);//change enable and WDE - also resets
+  WDTCSR = (33);//prescalers only - get rid of the WDE and WDCE bit
+  WDTCSR |= (1<<6);//enable interrupt mode
+  //ENABLE SLEEP - this enables the sleep mode
+  SMCR |= (1 << 2); //power down mode
+  SMCR |= 1;//enable sleep
+ 
+ 
+    
+}
+
+  
+void loop() {
+  //attachInterrupt(0, digitalInterrupt, FALLING); //interrupt for waking up
+  
+  digitalWrite(LED_PIN, HIGH);
+  delay(1000);
+  digitalWrite(LED_PIN, LOW);
+  
+  //Enable ADC converter
+  //ADCSRA |= (1 << 7);
+  /*Boolean Function Implementation*/
+  val1 = (!digitalRead(in3)*!digitalRead(in4))+
+         (digitalRead(in1)*digitalRead(in2)*!digitalRead(in3))+
+         (!digitalRead(in1)*!digitalRead(in2)*!digitalRead(in3))+        
+         (digitalRead(in1)*!digitalRead(in2)*!digitalRead(in4))+
+         (!digitalRead(in1)*digitalRead(in3)*digitalRead(in4));
+  
+  val2 = (digitalRead(in1)*digitalRead(in2))+
+         (digitalRead(in1)*!digitalRead(in4))+
+         (!digitalRead(in2)*digitalRead(in3)*digitalRead(in4));
+         
+  val3 = (digitalRead(in1)*!digitalRead(in2)*digitalRead(in4))+
+         (!digitalRead(in1)*!digitalRead(in3)*!digitalRead(in4))+
+         (digitalRead(in1)*digitalRead(in2)*digitalRead(in3)*!digitalRead(in4));
+         
+  val4 = (digitalRead(in1)*digitalRead(in2)*!digitalRead(in3))+
+         (digitalRead(in1)*!digitalRead(in2)*digitalRead(in3))+
+         (!digitalRead(in1)*digitalRead(in2)*digitalRead(in3))+
+         (digitalRead(in2)*!digitalRead(in3)*digitalRead(in4))+
+         (!digitalRead(in2)*!digitalRead(in3)*!digitalRead(in4));
+
+ 
+   /* sets the LED to the button's value*/
+  digitalWrite(out4, val1);
+  digitalWrite(out3, val2);
+  digitalWrite(out2, val3);
+  digitalWrite(out1, val4);
+  
+    for(int i=0; i<1; i++){
+    //Save Power by writing all Digital IO LOW - note that pins just need to be tied one way or another, do not damage devices!
+    for (int i = 0; i < 20; i++) {
+    if(i != 2)//just because the button is hooked up to digital pin 2
+    pinMode(i, OUTPUT);
+    }
+    
+    //BOD DISABLE - this must be called right before the __asm__ sleep instruction
+    MCUCR |= (3 << 5); //set both BODS and BODSE at the same time
+    MCUCR = (MCUCR & ~(1 << 5)) | (1 << 6); //then set the BODS bit and clear the BODSE bit at the same time
+    __asm__  __volatile__("sleep");//in line assembler to go to sleep
+        
+    }
+}
+
+void digitalInterrupt(){
+  //needed for the digital input interrupt
+}
+
+ISR(WDT_vect){
+  //DON'T FORGET THIS!  Needed for the watch dog timer.  This is called after a watch dog timer timeout - this is the interrupt function called after waking up
+}// watchdog interrupt
+ 
